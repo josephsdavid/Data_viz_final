@@ -15,8 +15,13 @@ import java.io.PrintWriter;
 import java.io.InputStream; 
 import java.io.OutputStream; 
 import java.io.IOException; 
-
+// TODO:
+// Axes: Units
+// color scheme: Ibarra appropriate, one color
 public class Final extends PApplet {
+	
+	boolean instruct = true;
+	PFont pf;
 
 
 
@@ -24,11 +29,16 @@ public class Final extends PApplet {
 	PeasyCam cam;
 	// flexing polymorphism
 	localEffects[] e = new localEffects[2];
-
+	
+	// change to your font but honestly if you dont use iosevka what are you doing
+	String font = "Iosevka";
+	
+	// stored in src
 	String path = "tcclean.csv";
 
 	public void setup() {
 		// peasycam is absolutely amazing
+		pf = createFont(font, 24);
 		cam = new PeasyCam(this, width/2, height/2,0,1000);
 		cam.setMinimumDistance(500);
 		cam.setMaximumDistance(5000);
@@ -37,12 +47,41 @@ public class Final extends PApplet {
 		e[0] = new effectPlot(path);
 		e[1] = new effectAxes(path);
 	}
+	
+	public void mousePressed() {
+		instruct = false;
+		
+		
+	}
 
 
 
 	public void draw() {
 		//lights();
 		// to undo any stupid HSB i did
+	if (instruct){
+		background(255);
+		pushMatrix();
+		translate(width/2, height/4);
+		textFont(pf);
+		fill(0);
+		textAlign(CENTER);
+		text("This is a local effects plot,it shows the average change in prediction \n"
+				+ "of a model based on the value of a feature. For more information, \n"
+				+ "please visit https://christophm.github.io/interpretable-ml-book/ale.html \n"
+				+ "In this visualization, cabins(#) represents the number of cabins on a cruise ship \n"
+				+ "and Tonnage(T) represents the weight in tons of the cruise ship. Accumulated Local \n"
+				+ "Effects(Δŷ) ('ALE') represents how many more crew members a random forest would predict \n"
+				+ "be on that cruise ship, given the product of cabins and tonnage. If an ALE plot is more \n"
+				+ "or less flat, that means there is no interaction between the two features, while \n"
+				+ "if it is not flat, that indicates interactive effects. This is part of my project \n"
+				+ "on Interpretable Machine Learning.\n"
+				+ "CLICK TO CONTINUE", 0,0);
+		popMatrix();
+		textAlign(LEFT);
+		
+		
+	} else {
 		colorMode(RGB,255);
 		directionalLight(255, 255, 255, 0,0,-1);
 		pointLight(100, 100, 100, width ,height,0);
@@ -56,6 +95,7 @@ public class Final extends PApplet {
 		for (int i = 0; i < e.length; i++) {
 			e[i].display();
 		}
+	}
 
 	}
 
@@ -117,11 +157,13 @@ public class Final extends PApplet {
 				ton.append(row.getFloat("Tonnage"));
 				cab.append(row.getFloat("cabins"));
 			}
-			// construct the arrays objects
-			ale = new effect("Accumulated Local Effect", al.array());
-			tonnage = new effect("Tonnage", ton.array());
-			cabins = new effect("Cabins", cab.array());
+			// construct the namedArray effect objects
+			ale = new effect("Accumulated Local Effect (Δŷ)", al.array());
+			tonnage = new effect("Tonnage (T)", ton.array());
+			cabins = new effect("Cabins (#)", cab.array());
 		}
+		
+	
 
 
 		// inspired by
@@ -130,7 +172,7 @@ public class Final extends PApplet {
 		// they approached a 3d plot, especially with the scaling
 		public void display() {
 			// this gets that nice heatmappy look
-			colorMode(HSB, 255);
+			//colorMode(HSB, 255);
 			pushMatrix();
 			// stretch the matrix to where i want it
 			scale(width/3 , height/3);
@@ -145,7 +187,8 @@ public class Final extends PApplet {
 				float z = ale.regularize()[i] * 200;
 				// color by effect strength, hot colors are strong interactive effect
 				noStroke();
-				fill((z),255,255);
+				//float inter = map(i/4, z, tonnage.number, 0, 10);
+				fill(lerpColor(color(0,0,175), color(255,0,0),z/200));
 				pushMatrix();
 				// I love this
 				translate(x,y,z*2);
@@ -166,8 +209,8 @@ public class Final extends PApplet {
 		effectAxes (String path) {
 			// contains local effects info
 			super(path);
-			f = createFont("Iosevka", 16);
-			b = createFont("Iosevka", 32);
+			f = createFont(font, 16);
+			b = createFont(font, 32);
 		}
 
 		// draw the axis for tonnage
@@ -189,7 +232,7 @@ public class Final extends PApplet {
 			colorMode(HSB,20);
 			for (int i = 0; i < 20; i++) {
 				fill(0,i/10,i);
-				text(tonnage.name, -200, 100, i); 
+				text(tonnage.name, -250, 100, i); 
 			}
 			// undo the HSB
 			colorMode(RGB, 255);
@@ -224,11 +267,10 @@ public class Final extends PApplet {
 
 		// draw the lovely color legend
 		public void ALEaxes() {
-			colorMode(HSB, 255);
 			for (int i = 0; i<tonnage.series.length; i++) {
 				float z = ale.regularize()[i] * 200;
 				strokeWeight(30);
-				stroke((z),255,255);
+				stroke(lerpColor(color(0,0,175), color(255,0,0),z/200));
 				point(z+100, -200, 100);
 			}
 			
@@ -241,7 +283,7 @@ public class Final extends PApplet {
 			for (int i = 0; i < 20; i++) {
 				fill(0,i/10,i);
 
-				text(ale.name, 0, -280, i); 
+				text(ale.name, -50, -280, i); 
 			}
 			colorMode(RGB,255);
 			fill(0);
